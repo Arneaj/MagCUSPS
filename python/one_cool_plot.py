@@ -1,0 +1,156 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import mag_cusps as cusps
+from gorgon_tools.magnetosphere import gorgon_import
+import gorgon
+import sys
+
+
+if len(sys.argv) < 2:
+    print("No Run path given! Defaulting to /rds/general/user/avr24/projects/swimmr-sage/live/mheyns/benchmarking/runs/Run1")
+    filepath = "/rds/general/user/avr24/projects/swimmr-sage/live/mheyns/benchmarking/runs/Run1"
+else:
+    filepath = sys.argv[1]
+    
+if len(sys.argv) < 3:
+    print("No Timestep given! Defaulting to 23100")
+    timestep = "23100"
+else: 
+    timestep = sys.argv[2]
+    
+sim = gorgon_import.gorgon_sim(data_dir=filepath)
+index_of_timestep = np.where( sim.times == float(timestep) )[0][0]
+sim.import_timestep(index_of_timestep)
+sim.import_space( filepath + "/MS/x00_Bvec_c-" + timestep + ".pvtr" )
+
+Rho: np.ndarray = sim.arr["rho"]
+J: np.ndarray = sim.arr["jvec"]
+
+X: np.ndarray = sim.xc; Y: np.ndarray = sim.yc; Z: np.ndarray = sim.zc
+
+extra_precision = 3.0
+
+shape_realx2 = np.array([
+    int( extra_precision * (X[-1]-X[0]) ), 
+    int( extra_precision * (Y[-1]-Y[0]) ), 
+    int( extra_precision * (Z[-1]-Z[0]) ),
+    3
+], dtype=np.int32)
+
+# J_norm = np.linalg.norm( J, axis=3 )
+
+J_processed: np.ndarray = cusps.preprocess( J, X, Y, Z, shape_realx2 )
+Rho_processed: np.ndarray = cusps.preprocess( Rho, X, Y, Z, shape_realx2 )
+
+J_norm_processed: np.ndarray = np.linalg.norm( J_processed, axis=3 )
+
+earth_pos = extra_precision * np.array( [30, 58, 58], dtype=np.float64 )
+
+
+MP = cusps.get_interest_points(
+    J_norm_processed, earth_pos, 
+    Rho_processed,
+    theta_min=0.0, theta_max=np.pi*0.85,  
+    nb_theta=50, nb_phi=90,
+    dx=0.1, dr=0.1,
+    alpha_0_min=0.4, alpha_0_max=0.6, nb_alpha_0=4,
+    r_0_mult_min=1.5, r_0_mult_max=3.0, nb_r_0=20
+)
+
+if MP is None:
+    raise Exception("Bad")
+
+BS = cusps.get_bowshock(
+    Rho=Rho_processed, earth_pos=earth_pos, 
+    dr=0.1, 
+    max_nb_theta=40,
+    nb_phi=90
+)
+
+L12 = cusps.fit_to_analytical( 
+    analytical_function = "Liu12",
+    interest_points     = MP,      # r_0                        a_0     a_1     a_2     d_n                     l_n     s_n     d_s                     l_s     s_s         
+    initial_params      = np.array([ extra_precision * 10.0,    0.5,    0,      0,      extra_precision * 3,    0.55,   5,      extra_precision * 3,    0.55,   5]),
+    lowerbound          = np.array([ extra_precision * 5.0,     0.2,    -1.0,   -1.0,   extra_precision * 0,    0.1,    0.1,    extra_precision * 0,    0.1,    0.1]),
+    upperbound          = np.array([ extra_precision * 15.0,    0.8,    1.0,    1.0,    extra_precision * 6,    2,      10,     extra_precision * 6,    2,      10]),
+    radii_of_variation  = np.array([ extra_precision * 3.0,     0.2,    0.5,    0.5,    extra_precision * 2,    0.1,    3,      extra_precision * 2,    0.1,    3]),
+)
+if L12 is None:
+    raise Exception("Bad bad bad")
+L12_params, L12_cost = L12
+
+
+
+saturation = 1e-9
+
+
+
+fig = plt.figure()
+ax = plt.axes()
+
+ax.set_xlabel(r"$x \in [-30; 128] R_E$", fontsize=12, labelpad=6.0)
+ax.set_ylabel(r"$z \in [-58; 58] R_E$", fontsize=12, labelpad=6.0)
+
+
+fig.set_figwidth(7)
+fig.set_figheight(5.8)
+
+fig.suptitle(r"$||\mathbf{J}|| \in (\mathbf{P}_{\text{Earth}},\hat x, \hat z)$", fontsize=15)
+
+
+
+
+theta = np.linspace(0, np.pi*0.99, 100)
+
+################################
+# LIU12
+################################
+
+
+r1 = cusps.Liu12( L12_params, theta, 0 )
+r2 = cusps.Liu12( L12_params, theta, np.pi )
+
+
+X1 = r1 * np.cos(theta)
+Z1 = r1 * np.sin(theta)
+
+X2 = r2 * np.cos(theta)
+Z2 = r2 * np.sin(theta)
+
+X = np.concatenate( [X2[::-1], X1] )
+Z = np.concatenate( [-Z2[::-1], Z1] ) # type: ignore
+
+X = earth_pos[0] - X
+Z += earth_pos[2]
+
+X_MP, Y_MP, Z_MP = gorgon.spherical_to_cartesian( MP[:,2], MP[:,0], MP[:,1], earth_pos )
+is_in_plane_MP = np.abs(Y_MP-int(earth_pos[1])) < 1
+X_MP_plot = X_MP[is_in_plane_MP]
+Z_MP_plot = Z_MP[is_in_plane_MP]
+
+# X_BS, Y_BS, Z_BS = gorgon.spherical_to_cartesian( BS[:,2], BS[:,0], BS[:,1], earth_pos )
+# is_in_plane_BS = np.abs(Y_BS-int(earth_pos[1])) < 1
+# X_BS_plot = X_BS[is_in_plane_BS]
+# Z_BS_plot = Z_BS[is_in_plane_BS]
+
+
+ax.imshow( np.moveaxis(J_norm_processed[:,int(earth_pos[1]),:], [0,1], [1,0] ), cmap="inferno", vmin=0, vmax=saturation, interpolation="none")
+ax.plot( X, Z, zorder=2, lw=1.0, label="Analytical function after regression", c="skyblue" )
+ax.scatter( X_MP_plot, Z_MP_plot, s=1.0, c=MP[is_in_plane_MP,3], cmap="Spectral", zorder=1, label="Magnetopause interest points" )
+# ax.scatter( X_BS_plot, Z_BS_plot, s=1.5, color="green", zorder=1, label="Bow-shock" )
+ax.set_title( f"Liu12 model. Average fitting loss: {L12_cost/(extra_precision * MP.shape[0]):.2f}" )
+ax.set_xlim(0, J_norm_processed.shape[0]-1)
+ax.set_ylim(0, J_norm_processed.shape[2]-1)
+ax.set_xticks([])
+ax.set_yticks([])
+
+plt.legend()
+
+
+
+
+
+
+
+
+plt.savefig("../images/one_cool_plot.svg")
