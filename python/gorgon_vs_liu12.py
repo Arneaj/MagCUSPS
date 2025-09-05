@@ -52,27 +52,38 @@ MP = cusps.get_interest_points(
     J_norm_processed, earth_pos, 
     Rho_processed,
     theta_min=0.0, theta_max=np.pi*0.85,  
-    nb_theta=40, nb_phi=90,
+    nb_theta=60, nb_phi=90,
     dx=0.1, dr=0.1,
     alpha_0_min=0.4, alpha_0_max=0.6, nb_alpha_0=4,
     r_0_mult_min=1.5, r_0_mult_max=3.0, nb_r_0=20
 )
 
-R25_params, R25_cost = cusps.fit_to_Rolland25( 
-    MP, MP.shape[0],               # r_0                        a_0     a_1     a_2     d_n                     l_n     s_n     d_s                     l_s     s_s     e         
-    initial_params      = np.array([ extra_precision * 10.0,    0.5,    0,      0,      extra_precision * 3,    0.55,   5,      extra_precision * 3,    0.55,   5,      0 ]),
-    lowerbound          = np.array([ extra_precision * 5.0,     0.2,    -1.0,   -1.0,   extra_precision * 0,    0.1,    0.1,    extra_precision * 0,    0.1,    0.1,    -0.8 ]),
-    upperbound          = np.array([ extra_precision * 15.0,    0.8,    1.0,    1.0,    extra_precision * 6,    2,      10,     extra_precision * 6,    2,      10,     0.8 ]),
-    radii_of_variation  = np.array([ extra_precision * 3.0,     0.2,    0.5,    0.5,    extra_precision * 2,    0.1,    3,      extra_precision * 2,    0.1,    3,      0.5 ]),
-)
+if MP is None:
+    raise Exception("Bad")
 
-L12_params, L12_cost = cusps.fit_to_Liu12( 
-    MP, MP.shape[0],               # r_0                        a_0     a_1     a_2     d_n                     l_n     s_n     d_s                     l_s     s_s     e         
+R25 = cusps.fit_to_analytical( 
+    analytical_function = "Rolland25",
+    interest_points     = MP,      # r_0                        a_0     a_1     a_2     d_n                     l_n     s_n     d_s                     l_s     s_s     e         
     initial_params      = np.array([ extra_precision * 10.0,    0.5,    0,      0,      extra_precision * 3,    0.55,   5,      extra_precision * 3,    0.55,   5,      0 ]),
     lowerbound          = np.array([ extra_precision * 5.0,     0.2,    -1.0,   -1.0,   extra_precision * 0,    0.1,    0.1,    extra_precision * 0,    0.1,    0.1,    -0.8 ]),
     upperbound          = np.array([ extra_precision * 15.0,    0.8,    1.0,    1.0,    extra_precision * 6,    2,      10,     extra_precision * 6,    2,      10,     0.8 ]),
     radii_of_variation  = np.array([ extra_precision * 3.0,     0.2,    0.5,    0.5,    extra_precision * 2,    0.1,    3,      extra_precision * 2,    0.1,    3,      0.5 ]),
 )
+if R25 is None:
+    raise Exception("Bad bad")
+R25_params, R25_cost = R25
+
+L12 = cusps.fit_to_analytical( 
+    analytical_function = "Liu12",
+    interest_points     = MP,      # r_0                        a_0     a_1     a_2     d_n                     l_n     s_n     d_s                     l_s     s_s         
+    initial_params      = np.array([ extra_precision * 10.0,    0.5,    0,      0,      extra_precision * 3,    0.55,   5,      extra_precision * 3,    0.55,   5]),
+    lowerbound          = np.array([ extra_precision * 5.0,     0.2,    -1.0,   -1.0,   extra_precision * 0,    0.1,    0.1,    extra_precision * 0,    0.1,    0.1]),
+    upperbound          = np.array([ extra_precision * 15.0,    0.8,    1.0,    1.0,    extra_precision * 6,    2,      10,     extra_precision * 6,    2,      10]),
+    radii_of_variation  = np.array([ extra_precision * 3.0,     0.2,    0.5,    0.5,    extra_precision * 2,    0.1,    3,      extra_precision * 2,    0.1,    3]),
+)
+if L12 is None:
+    raise Exception("Bad bad bad")
+L12_params, L12_cost = L12
 
 
 
@@ -103,8 +114,8 @@ theta = np.linspace(0, np.pi*0.99, 100)
 ################################
 
 
-r1 = gorgon.Liu12( L12_params, theta, 0 )
-r2 = gorgon.Liu12( L12_params, theta, np.pi )
+r1 = cusps.Liu12( L12_params, theta, 0 )
+r2 = cusps.Liu12( L12_params, theta, np.pi )
 
 
 X1 = r1 * np.cos(theta)
@@ -122,7 +133,7 @@ Z += earth_pos[2]
 
 axes[0].imshow( J_norm_processed[::-1,int(earth_pos[1]),:], cmap="inferno", vmin=0, vmax=saturation, interpolation="none")
 axes[0].plot( Z, X )
-axes[0].set_title( f"Liu12 model. Average fitting loss: {L12_cost/MP.shape[0]:.2f}" )
+axes[0].set_title( f"Liu12 model. Average fitting loss: {L12_cost/(extra_precision * MP.shape[0]):.2f}" )
 axes[0].set_xlim(0, J_norm_processed.shape[2]-1)
 axes[0].set_ylim(0, J_norm_processed.shape[0]-1)
 axes[0].set_xticks([])
@@ -131,8 +142,8 @@ axes[0].set_yticks([])
 
 ############### ME25
 
-r1 = gorgon.Me25_poly( R25_params, theta, 0 )
-r2 = gorgon.Me25_poly( R25_params, theta, np.pi )
+r1 = cusps.Rolland25( R25_params, theta, 0 )
+r2 = cusps.Rolland25( R25_params, theta, np.pi )
 
 X1 = r1 * np.cos(theta)
 Z1 = r1 * np.sin(theta)
@@ -150,7 +161,7 @@ Z += earth_pos[2]
 axes[1].imshow( J_norm_processed[::-1,int(earth_pos[1]),:], cmap="inferno", vmin=0, vmax=saturation, interpolation="none")
 # plt.colorbar(J1, ax=axes[1], shrink=1)
 axes[1].plot( Z, X )
-axes[1].set_title( f"New model. Average fitting loss: {R25_cost/MP.shape[0]:.2f}" )
+axes[1].set_title( f"New model. Average fitting loss: {R25_cost/(extra_precision * MP.shape[0]):.2f}" )
 axes[1].set_xlim(0, J_norm_processed.shape[2]-1)
 axes[1].set_ylim(0, J_norm_processed.shape[0]-1)
 axes[1].set_xticks([])
