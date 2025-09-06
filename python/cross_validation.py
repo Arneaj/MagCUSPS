@@ -60,7 +60,7 @@ labels_df = filtered_df.filter(items=['Model_result'])
 labels = labels_df.to_numpy( np.float64 ).ravel()
 
 
-fig, axes = plt.subplots( 3 )
+fig, axes = plt.subplots( ncols=3 )
 fig.set_size_inches( 13, 5 )
 
 r2 = np.empty((3))
@@ -227,15 +227,17 @@ for i, m in enumerate(models):
     axes[i].scatter(y_test, y_pred, alpha=0.7, color=(0.2, 0.2, 0.2))
     axes[i].plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--')
     axes[i].set_xlabel('Actual Quality Score')
-    axes[i].set_ylabel('Predicted Quality Score')
+    if i == 0: axes[i].set_ylabel('Predicted Quality Score')
     
-    axes[i].set_title(f"{m}: Actual vs Predicted\nnb_estim={best_nb_estim}, max_depth={best_max_depth}")
+    axes[i].set_title(f"{m}")
        
     mag_cusps_model = MagCUSPS_RandomForestModel()
     mag_cusps_model.define(final_model, scaler)
         
     mag_cusps_model.dump(f"../.result_folder/evaluation_prediction_model_{m}.pkl")
     
+    
+fig.suptitle(f"Actual vs Predicted per model")
     
 # axes[1, 0].bar( models, r2, color=(0.3, 0.3, 0.3), width=0.5 )
 # axes[1, 0].set_title(f"R^2")
