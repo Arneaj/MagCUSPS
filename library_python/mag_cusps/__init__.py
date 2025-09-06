@@ -559,7 +559,7 @@ def analyse(
     analytical_function: str = "Rolland25",
     threshold: float = 2.0, phi_radius: float = 0.3,
     dx: float = 0.5, dy: float = 0.5, dz: float = 0.5,
-    # theta_used: float = 0.2
+    theta_used: float = 0.2
 ) -> np.ndarray | None:
     """
     Provide the exact parameters needed to use the MagCUSPS_Model to predict the quality
@@ -600,9 +600,9 @@ def analyse(
         return None
     
     max_theta_in_threshold, is_concave = interest_point_flatness_checker(interest_points, nb_theta, nb_phi, threshold, phi_radius)
-    # delta_r0 = get_delta_r0(params[0], interest_points, nb_theta, nb_phi, theta_used)
+    delta_r0 = get_delta_r0(params[0], interest_points, nb_theta, nb_phi, theta_used)
     
-    return np.append( params, [fit_loss, grad_J_fit_over_ip, max_theta_in_threshold, is_concave] )
+    return np.append( params, [fit_loss, grad_J_fit_over_ip, delta_r0, max_theta_in_threshold, is_concave] )
     
 
 

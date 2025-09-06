@@ -108,7 +108,7 @@ for i, m in enumerate(models):
     best_seed = -1
     
     for seed_i in range(20):
-        for n_estim in [15, 20, 25, 30, 35, 40, 45, 50]:
+        for n_estim in [15, 20, 25, 30, 35, 40, 45, 50, 55, 60]:
             for mx_depth in [2, 4, 6, 8, 10]:
                 for min_spl_split in [2, 3, 4, 5, 6, 7]:
                     for min_spl_leaf in [1, 2, 3, 4]:
@@ -147,7 +147,7 @@ for i, m in enumerate(models):
                         this_r2 = np.mean(fold_r2s)
                         this_uncertainty = np.mean(fold_uncertainties)
                         
-                        if (this_r2 < 0.75): continue
+                        # if (this_r2 < 0.70): continue
             
                         if (this_r2/best_r2) * (best_uncertainty/this_uncertainty)**0.5 > 1.0:
                             best_r2 = this_r2
@@ -188,7 +188,7 @@ for i, m in enumerate(models):
     final_specificity = true_negatives / max(np.sum(~actual_faults), 1)
     final_recall = true_positives / max(np.sum(actual_faults), 1)
     final_precision = true_positives / max(np.sum(predicted_faults), 1)
-    final_f1 = 2 * (final_precision*final_recall)/(final_precision+final_recall)
+    final_f1 = 2 * (final_precision*final_recall)/ max(final_precision+final_recall, 1)
     
     uncertainties = [get_rf_uncertainty(final_model, x.reshape(1, -1)) for x in X_test]
     
@@ -205,13 +205,14 @@ for i, m in enumerate(models):
     f1[i] = final_f1
     
     from sklearn.metrics import roc_auc_score, roc_curve
-    final_auc_score = roc_auc_score(actual_faults, y_pred)
+    final_auc_score = roc_auc_score(actual_faults, predicted_faults)
     
-    print(f"Best {m} model:\n\tR^2={best_r2}\n\tRMSE={final_rmse}\n\tUncertainty={best_uncertainty}")
+    print(f"Best {m} model:")
     print(f"\tNumber of trees={best_nb_estim}\n\tMax depth={best_max_depth}")
     print(f"\tMin sample split={best_min_spl_split}\n\tMin sample leaf={best_min_spl_leaf}")
     print(f"\tSeed={best_seed}")
     
+    print(f"R^2={best_r2}\nRMSE={final_rmse}\nUncertainty={best_uncertainty}")
     print(f"Area Under ROC Curve: {final_auc_score:.3f}")
     print(f"Specificity: {final_specificity:.3f}")
     print(f"Sensitivity/Recall (fault detection rate): {final_recall:.3f}")
@@ -230,10 +231,10 @@ for i, m in enumerate(models):
     
     axes[i].set_title(f"{m}: Actual vs Predicted\nnb_estim={best_nb_estim}, max_depth={best_max_depth}")
        
-    # mag_cusps_model = MagCUSPS_RandomForestModel()
-    # mag_cusps_model.define(final_model, scaler)
+    mag_cusps_model = MagCUSPS_RandomForestModel()
+    mag_cusps_model.define(final_model, scaler)
         
-    # mag_cusps_model.dump(f"../.result_folder/evaluation_prediction_model_{m}.pkl")
+    mag_cusps_model.dump(f"../.result_folder/evaluation_prediction_model_{m}.pkl")
     
     
 # axes[1, 0].bar( models, r2, color=(0.3, 0.3, 0.3), width=0.5 )
