@@ -89,7 +89,7 @@ for i, m in enumerate(models):
     input_names = inputs_df.columns
     
     X_train_val, X_test, y_train_val, y_test = train_test_split(
-        inputs, labels, test_size=0.4
+        inputs, labels, test_size=0.3, random_state=420
     )
     
     
