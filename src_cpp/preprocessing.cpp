@@ -1,6 +1,23 @@
 #include "../headers_cpp/read_file.h"
 #include "../headers_cpp/preprocessing.h"
 
+
+void orthonormalise_helper(
+    const Shape& shape, const Matrix& mat, Matrix& new_mat, 
+    const std::vector<int>& iX, const std::vector<int>& iY, const std::vector<int>& iZ,
+    const std::vector<double>& dX, const std::vector<double>& dY, const std::vector<double>& dZ,
+    int start_index, int end_index )
+{
+    for (int sx=start_index; sx<end_index; sx++) for (int sy=0; sy<shape.y; sy++)
+        for (int sz=0; sz<shape.z; sz++) for (int i=0; i<shape.i; i++)
+            new_mat(sx,sy,sz,i) =   ( mat(iX[sx],iY[sy],iZ[sz],i)*(1-dX[sx]) + mat(iX[sx]+1,iY[sy],iZ[sz],i)*dX[sx] )*(1-dY[sy])*(1-dZ[sz])
+                                +   ( mat(iX[sx],iY[sy]+1,iZ[sz],i)*(1-dX[sx]) + mat(iX[sx]+1,iY[sy]+1,iZ[sz],i)*dX[sx] )*dY[sy]*(1-dZ[sz])
+                                +   ( mat(iX[sx],iY[sy],iZ[sz]+1,i)*(1-dX[sx]) + mat(iX[sx]+1,iY[sy],iZ[sz]+1,i)*dX[sx] )*(1-dY[sy])*dZ[sz]
+                                +   ( mat(iX[sx],iY[sy]+1,iZ[sz]+1,i)*(1-dX[sx]) + mat(iX[sx]+1,iY[sy]+1,iZ[sz]+1,i)*dX[sx] )*dY[sy]*dZ[sz];   
+};
+
+
+
 Matrix orthonormalise( const Matrix& mat, Matrix& X, Matrix& Y, Matrix& Z, const Shape* new_shape )
 {
     Shape shape;
@@ -54,14 +71,26 @@ Matrix orthonormalise( const Matrix& mat, Matrix& X, Matrix& Y, Matrix& Z, const
         break;
     }
 
-    #pragma omp parallel for
-    for (int sx=0; sx<shape.x; sx++) for (int sy=0; sy<shape.y; sy++)
-        for (int sz=0; sz<shape.z; sz++) for (int i=0; i<shape.i; i++)
-            new_mat(sx,sy,sz,i) =   ( mat(iX[sx],iY[sy],iZ[sz],i)*(1-dX[sx]) + mat(iX[sx]+1,iY[sy],iZ[sz],i)*dX[sx] )*(1-dY[sy])*(1-dZ[sz])
-                                +   ( mat(iX[sx],iY[sy]+1,iZ[sz],i)*(1-dX[sx]) + mat(iX[sx]+1,iY[sy]+1,iZ[sz],i)*dX[sx] )*dY[sy]*(1-dZ[sz])
-                                +   ( mat(iX[sx],iY[sy],iZ[sz]+1,i)*(1-dX[sx]) + mat(iX[sx]+1,iY[sy],iZ[sz]+1,i)*dX[sx] )*(1-dY[sy])*dZ[sz]
-                                +   ( mat(iX[sx],iY[sy]+1,iZ[sz]+1,i)*(1-dX[sx]) + mat(iX[sx]+1,iY[sy]+1,iZ[sz]+1,i)*dX[sx] )*dY[sy]*dZ[sz];   
-    
+    const unsigned int nb_threads = std::thread::hardware_concurrency();
+
+    std::thread t[nb_threads];
+
+    for (int i=0; i<nb_threads; i++)
+    {
+        int start_index = (i*shape.x)/nb_threads;
+        int end_index = ((i+1)*shape.x)/nb_threads;
+
+        t[i] = std::thread(
+            &orthonormalise_helper, 
+            std::ref(shape), std::ref(mat), std::ref(new_mat), 
+            std::ref(iX), std::ref(iY), std::ref(iZ),
+            std::ref(dX), std::ref(dY), std::ref(dZ),
+            start_index, end_index
+        );
+    }
+
+    for (int i=0; i<nb_threads; i++) t[i].join();
+
     return new_mat;
 }
 

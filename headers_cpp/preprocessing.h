@@ -1,6 +1,8 @@
 #ifndef PREPROCESSING_H
 #define PREPROCESSING_H
 
+#include <thread>
+
 #include "matrix.h"
 #include "read_file.h"
 #include "streamlines.h"
