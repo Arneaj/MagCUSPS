@@ -98,8 +98,7 @@ for i, m in enumerate(models):
     X_train_val = scaler.fit_transform(X_train_val)
     X_test = scaler.transform(X_test)
     
-    best_r2 = 0.7
-    best_uncertainty = 0.5
+    best_composite_score = 0
     
     best_nb_estim = -1
     best_max_depth = -1
@@ -117,6 +116,7 @@ for i, m in enumerate(models):
                         fold_uncertainties = []
                         fold_r2s = []
                         fold_rmses = []
+                        fold_recalls = []
                         
                         kf = KFold(n_splits=5, shuffle=True, random_state=420)
                         for train_idx, val_idx in kf.split(X_train_val):
@@ -143,15 +143,33 @@ for i, m in enumerate(models):
                             # Calculate uncertainty on validation fold
                             fold_uncertainty = get_batch_rf_uncertainty(fold_model, X_fold_val)
                             fold_uncertainties.append(fold_uncertainty)
+                            
+                            fault_threshold = 0.5  
+                        
+                            actual_faults = y_fold_val < fault_threshold
+                            predicted_faults = y_fold_pred < fault_threshold
+                            
+                            # Key metrics for fault detection
+                            true_positives = np.sum(actual_faults & predicted_faults)
+                            
+                            fold_recall = true_positives / max(np.sum(actual_faults), 1)
+                            fold_recalls.append(fold_recall)
                         
                         this_r2 = np.mean(fold_r2s)
                         this_uncertainty = np.mean(fold_uncertainties)
+                        this_rmse = np.mean(fold_rmses)
+                        this_recall = np.mean(fold_recalls)
                         
-                        # if (this_r2 < 0.70): continue
+                        
+                        this_composite_score = (
+                            0.3 * this_r2 +  
+                            0.3 * (1 - this_uncertainty) +  
+                            0.1 * (1 - this_rmse) +  
+                            0.2 * this_recall 
+                        )
             
-                        if (this_r2/best_r2) * (best_uncertainty/this_uncertainty)**0.5 > 1.0:
-                            best_r2 = this_r2
-                            best_uncertainty = this_uncertainty
+                        if this_composite_score > best_composite_score:
+                            best_composite_score = this_composite_score
                             
                             best_nb_estim = n_estim
                             best_max_depth = mx_depth
@@ -163,7 +181,7 @@ for i, m in enumerate(models):
         print(f"ERROR: no sufficiently good {m} model could be found")
         continue
     
-    fault_threshold = 0.3  
+    fault_threshold = 0.5  
     
     final_model = RandomForestRegressor(
         n_estimators=best_nb_estim,       
@@ -188,13 +206,13 @@ for i, m in enumerate(models):
     final_specificity = true_negatives / max(np.sum(~actual_faults), 1)
     final_recall = true_positives / max(np.sum(actual_faults), 1)
     final_precision = true_positives / max(np.sum(predicted_faults), 1)
-    final_f1 = 2 * (final_precision*final_recall)/ max(final_precision+final_recall, 1)
+    final_f1 = 2 * (final_precision*final_recall)/ (final_precision+final_recall)
     
     uncertainties = [get_rf_uncertainty(final_model, x.reshape(1, -1)) for x in X_test]
     
     final_r2 = r2_score(y_test, y_pred)
     final_rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-    final_uncertainty = np.sqrt(mean_squared_error(y_test, y_pred))
+    final_uncertainty = get_batch_rf_uncertainty(final_model, X_test)
     
     r2[i] = final_r2
     rmse[i] = final_rmse
@@ -204,7 +222,7 @@ for i, m in enumerate(models):
     precision[i] = final_precision
     f1[i] = final_f1
     
-    from sklearn.metrics import roc_auc_score, roc_curve
+    from sklearn.metrics import roc_auc_score
     final_auc_score = roc_auc_score(actual_faults, predicted_faults)
     
     print(f"Best {m} model:")
@@ -212,7 +230,7 @@ for i, m in enumerate(models):
     print(f"\tMin sample split={best_min_spl_split}\n\tMin sample leaf={best_min_spl_leaf}")
     print(f"\tSeed={best_seed}")
     
-    print(f"R^2={best_r2}\nRMSE={final_rmse}\nUncertainty={best_uncertainty}")
+    print(f"R^2={final_r2}\nRMSE={final_rmse}\nUncertainty={final_uncertainty}")
     print(f"Area Under ROC Curve: {final_auc_score:.3f}")
     print(f"Specificity: {final_specificity:.3f}")
     print(f"Sensitivity/Recall (fault detection rate): {final_recall:.3f}")
