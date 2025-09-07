@@ -41,6 +41,7 @@ jobs:
       - name: Install system dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
+          brew uninstall --ignore-dependencies cmake || true
           brew install cmake ninja
 
       - name: Install system dependencies (Windows)
