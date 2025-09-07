@@ -162,7 +162,7 @@ for i, m in enumerate(models):
                         
                         
                         this_composite_score = (
-                            0.3 * this_r2 +  
+                            0.5 * this_r2 +  
                             0.3 * (1 - this_uncertainty) +  
                             0.1 * (1 - this_rmse) +  
                             0.2 * this_recall 
