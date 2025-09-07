@@ -226,7 +226,7 @@ def process_points(
 def Shue97(
     params: np.ndarray, 
     theta: float | np.ndarray
-) -> float | np.ndarray | None:
+) -> float | np.ndarray:
     """
     Analytical approximation of the Magnetopause topology as written by Shue in his 1997 paper.
 
@@ -243,15 +243,14 @@ def Shue97(
         Radius at this angle.
     """
     if np.size(params) != 2:
-        print("ERROR: there should be 2 parameters for the Shue97 function")
-        return None
+        raise Exception("ERROR: there should be 2 parameters for the Shue97 function")
     return _mc.Shue97(params, theta)
 
 def Liu12(
     params: np.ndarray, 
     theta: float | np.ndarray, 
     phi: float | np.ndarray
-) -> float | np.ndarray | None:
+) -> float | np.ndarray:
     """
     Analytical approximation of the Magnetopause topology as written by Liu in his 2012 paper.
 
@@ -268,15 +267,14 @@ def Liu12(
         Radius at this angle.
     """
     if np.size(params) != 10:
-        print("ERROR: there should be 10 parameters for the Liu12 function")
-        return None
+        raise Exception("ERROR: there should be 10 parameters for the Liu12 function")
     return _mc.Liu12(params, theta, phi) 
     
 def Rolland25(
     params: np.ndarray, 
     theta: float | np.ndarray, 
     phi: float | np.ndarray 
-) -> float | np.ndarray | None:
+) -> float | np.ndarray:
     """
     Analytical approximation of the Magnetopause topology as written by Rolland in his 2025 thesis.
 
@@ -293,8 +291,7 @@ def Rolland25(
         Radius at this angle.
     """
     if np.size(params) != 11:
-        print("ERROR: there should be 11 parameters for the Rolland25 function")
-        return None
+        raise Exception("ERROR: there should be 11 parameters for the Rolland25 function")
     return _mc.Rolland25(params, theta, phi)
 
 
@@ -307,7 +304,7 @@ def fit_to_analytical(
     analytical_function: str = "Rolland25",
     nb_runs: int = 10,
     max_nb_iterations_per_run: int = 50,
-) -> tuple[np.ndarray, float] | None:
+) -> tuple[np.ndarray, float]:
     """
     Analytical fitting of the Shue97, Liu12 or Rolland25 analytical functions 
     to an array of interest points. N equals respectively 2, 10 and 11.
@@ -341,24 +338,20 @@ def fit_to_analytical(
     """
     if analytical_function == "Shue97":
         if np.size(initial_params) != 2:
-            print("ERROR: there should be 2 parameters for the Shue97 function")
-            return None
+            raise Exception("ERROR: there should be 2 parameters for the Shue97 function")
         return _mc.fit_to_Shue97(interest_points, initial_params, lowerbound, upperbound, 
                                  radii_of_variation, nb_runs, max_nb_iterations_per_run)
     if analytical_function == "Liu12":
         if np.size(initial_params) != 10:
-            print("ERROR: there should be 10 parameters for the Liu12 function")
-            return None
+            raise Exception("ERROR: there should be 10 parameters for the Liu12 function")
         return _mc.fit_to_Liu12(interest_points, initial_params, lowerbound, upperbound, 
                                 radii_of_variation, nb_runs, max_nb_iterations_per_run)
     if analytical_function == "Rolland25":
         if np.size(initial_params) != 11:
-            print("ERROR: there should be 11 parameters for the Rolland25 function")
-            return None
+            raise Exception("ERROR: there should be 11 parameters for the Rolland25 function")
         return _mc.fit_to_Rolland25(interest_points, initial_params, lowerbound, upperbound, 
                                     radii_of_variation, nb_runs, max_nb_iterations_per_run)
-    print("ERROR: analytical function should be 'Shue97', 'Liu12' or 'Rolland25'")
-    return None
+    raise Exception("ERROR: analytical function should be 'Shue97', 'Liu12' or 'Rolland25'")
 
 
 def get_grad_J_fit_over_ip(
@@ -367,7 +360,7 @@ def get_grad_J_fit_over_ip(
     J_norm: np.ndarray, earth_pos: np.ndarray,
     analytical_function: str = "Rolland25",
     dx: float = 0.5, dy: float = 0.5, dz: float = 0.5
-) -> float | None:
+) -> float:
     """
     Ratio of the current density gradient along the magnetopause between the 
     Shue97, Liu12 or Rolland25 analytical functions and the interest points. 
@@ -395,21 +388,17 @@ def get_grad_J_fit_over_ip(
     """
     if analytical_function == "Shue97":
         if np.size(params) != 2:
-            print("ERROR: there should be 2 parameters for the Shue97 function")
-            return None
+            raise Exception("ERROR: there should be 2 parameters for the Shue97 function")
         return _mc.get_grad_J_fit_over_ip_Shue97(params, interest_points, J_norm, earth_pos, dx, dy, dz)
     if analytical_function == "Liu12":
         if np.size(params) != 10:
-            print("ERROR: there should be 10 parameters for the Liu12 function")
-            return None
+            raise Exception("ERROR: there should be 10 parameters for the Liu12 function")
         return _mc.get_grad_J_fit_over_ip_Liu12(params, interest_points, J_norm, earth_pos, dx, dy, dz)
     if analytical_function == "Rolland25":
         if np.size(params) != 11:
-            print("ERROR: there should be 11 parameters for the Rolland25 function")
-            return None
+            raise Exception("ERROR: there should be 11 parameters for the Rolland25 function")
         return _mc.get_grad_J_fit_over_ip_Rolland25(params, interest_points, J_norm, earth_pos, dx, dy, dz)
-    print("ERROR: analytical function should be 'Shue97', 'Liu12' or 'Rolland25'")
-    return None
+    raise Exception("ERROR: analytical function should be 'Shue97', 'Liu12' or 'Rolland25'")
 
 
 def interest_point_flatness_checker(
@@ -560,7 +549,7 @@ def analyse(
     threshold: float = 2.0, phi_radius: float = 0.3,
     dx: float = 0.5, dy: float = 0.5, dz: float = 0.5,
     theta_used: float = 0.2
-) -> np.ndarray | None:
+) -> np.ndarray:
     """
     Provide the exact parameters needed to use the MagCUSPS_Model to predict the quality
     of the analysed numerical data.
@@ -596,8 +585,6 @@ def analyse(
         Array containing in order `[params..., fit_loss, grad_J_fit_over_ip, delta_r0, max_theta_in_threshold, is_concave]`.
     """
     grad_J_fit_over_ip = get_grad_J_fit_over_ip(params, interest_points, J_norm, earth_pos, analytical_function, dx, dy, dz)
-    if grad_J_fit_over_ip is None:
-        return None
     
     max_theta_in_threshold, is_concave = interest_point_flatness_checker(interest_points, nb_theta, nb_phi, threshold, phi_radius)
     delta_r0 = get_delta_r0(params[0], interest_points, nb_theta, nb_phi, theta_used)
