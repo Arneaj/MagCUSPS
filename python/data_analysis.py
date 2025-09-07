@@ -251,46 +251,57 @@ filtered_df['Model_result'] = filtered_df['Model_result'].map(value_map)
 labels_df = filtered_df.filter(items=['Model_result'])
 labels = labels_df.to_numpy( np.float64 ).ravel()
 
-for m in ["Shue97", "Liu12", "Rolland25"]:
-    selected_columns = [col for col in filtered_df.columns 
-                            if (
-                            col == 'max_theta_in_threshold' 
-                            or col == "is_concave"
-                            or m in col
-                            )
-                            and "_time_taken_s" not in col
-                        ]
-    inputs_df = filtered_df[selected_columns]
+labels.sort()
+labels_unique, labels_count = np.unique(labels, return_counts=True)
+
+
+plt.bar(["0.0", "0.33", "0.66", "1.0"], labels_count, alpha=0.7, color='gray')
+plt.xlabel('Quality Score')
+plt.ylabel('Frequency')
+plt.title('Quality Score Distribution')
+
+plt.savefig("../images/label_balance.svg")
+
+# for m in ["Shue97", "Liu12", "Rolland25"]:
+#     selected_columns = [col for col in filtered_df.columns 
+#                             if (
+#                             col == 'max_theta_in_threshold' 
+#                             or col == "is_concave"
+#                             or m in col
+#                             )
+#                             and "_time_taken_s" not in col
+#                         ]
+#     inputs_df = filtered_df[selected_columns]
     
-    inputs = inputs_df.to_numpy( np.float64 )
-    input_names = inputs_df.columns
+#     inputs = inputs_df.to_numpy( np.float64 )
+#     input_names = inputs_df.columns
 
 
-    # Run the complete analysis
-    print("🔬 PHYSICS SIMULATION QUALITY PREDICTION ANALYSIS")
-    print("=" * 60)
+#     # Run the complete analysis
+#     print("🔬 PHYSICS SIMULATION QUALITY PREDICTION ANALYSIS")
+#     print("=" * 60)
 
-    # Main regression analysis
-    results, X_train, X_test, y_train, y_test, X_train_scaled, X_test_scaled, scaler, models = \
-        comprehensive_regression_analysis(inputs, labels, input_names)
+#     # Main regression analysis
+#     results, X_train, X_test, y_train, y_test, X_train_scaled, X_test_scaled, scaler, models = \
+#         comprehensive_regression_analysis(inputs, labels, input_names)
 
-    # Feature importance analysis
-    importance_df = analyze_feature_importance(results, input_names, X_train, X_train_scaled)
+#     # Feature importance analysis
+#     importance_df = analyze_feature_importance(results, input_names, X_train, X_train_scaled)
 
-    # Create visualizations
-    create_visualizations(results, y_test, importance_df, inputs, labels, m)
+#     # Create visualizations
+#     create_visualizations(results, y_test, importance_df, inputs, labels, m)
 
-    # Practical recommendations
-    print(f"\n=== PRACTICAL RECOMMENDATIONS ===")
-    best_model = max(results.keys(), key=lambda k: results[k]['r2'])
-    best_r2 = results[best_model]['r2']
+#     # Practical recommendations
+#     print(f"\n=== PRACTICAL RECOMMENDATIONS ===")
+#     best_model = max(results.keys(), key=lambda k: results[k]['r2'])
+#     best_r2 = results[best_model]['r2']
 
-    print(f"Best model: {best_model} (R² = {best_r2:.3f})")
-    print(f"Top 3 most important features:")
-    for i, row in importance_df.head(3).iterrows():
-        print(f"   {i+1}. {row['Feature']} (importance: {row['Average']:.3f})")
+#     print(f"Best model: {best_model} (R² = {best_r2:.3f})")
+#     print(f"Top 3 most important features:")
+#     for i, row in importance_df.head(3).iterrows():
+#         print(f"   {i+1}. {row['Feature']} (importance: {row['Average']:.3f})")
 
-    joblib.dump(models[best_model], f"evaluation_prediction_model_{m}.pkl")
+#     joblib.dump(models[best_model], f"evaluation_prediction_model_{m}.pkl")
     
-    print("\n" * 3)        
+#     print("\n" * 3)        
         

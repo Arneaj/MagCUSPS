@@ -338,17 +338,19 @@ namespace fitting
         // if (theta<0 || theta>PI) { std::cout << "theta should be in [0; pi]\n"; exit(1); }
         // if (phi<-PI || phi>PI) { std::cout << "phi should be in [-pi; pi)\n"; exit(1); }
 
+        const double* params_ptr = params.data();
+
         double cos_theta = std::cos(theta);
         double cos_phi = std::cos(phi);
 
         double pos_side = is_pos<double>( cos_phi );
 
-        return *params.data(0) * std::pow(
+        return params_ptr[0] * std::pow(
             2.0 / (1.0+cos_theta), 
-            *params.data(1) + *params.data(2)*cos_phi + *params.data(3)*cos_phi*cos_phi
+            params_ptr[1] + params_ptr[2]*cos_phi + params_ptr[3]*cos_phi*cos_phi
         ) - (
-            *params.data(4) * std::exp( std::abs(theta-*params.data(5)) / *params.data(6) ) * pos_side +
-            *params.data(7) * std::exp( std::abs(theta-*params.data(8)) / *params.data(9) ) * (1.0-pos_side)
+            params_ptr[4] * std::exp( - std::abs(theta-params_ptr[5]) / params_ptr[6] ) * is_pos<double>( cos_phi ) +
+            params_ptr[7] * std::exp( - std::abs(theta-params_ptr[8]) / params_ptr[9] ) * is_pos<double>( -cos_phi )
         ) * cos_phi*cos_phi;
     }
 

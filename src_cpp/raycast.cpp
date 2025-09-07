@@ -141,14 +141,14 @@ void interest_points_helper(    double r_0, double alpha_0,
                                 const Matrix& J_norm, const Point& earth_pos, 
                                 double theta_min,
                                 int nb_theta, int nb_phi, 
-                                double dr, double dtheta, double dphi )
+                                double dr, double dtheta, double dphi,
+                                int itheta_start, int itheta_end )
 {
-    double theta = theta_min;
+    double theta = theta_min + (itheta_start+1)*dtheta;
 
-    #pragma omp parallel for
-    for (int itheta=0; itheta<nb_theta; itheta++)
+    for (int itheta=itheta_start; itheta<itheta_end; itheta++)
     {
-        theta = theta_min + (itheta+1)*dtheta;
+        theta += dtheta;
 
 	    // if (std::abs(theta) < 0.05) continue;
 
@@ -263,14 +263,31 @@ InterestPoint* get_interest_points( const Matrix& J_norm, const Point& earth_pos
     double dtheta = (theta_max - theta_min) / nb_theta;
     double dphi = 2.0*PI / nb_phi;
 
+    const unsigned int nb_threads = std::thread::hardware_concurrency();
+
     for (double r_0_mult=r_0_mult_min; r_0_mult<=r_0_mult_max; r_0_mult+=dr_0_mult) for (double alpha_0=alpha_0_min; alpha_0<=alpha_0_max; alpha_0+=dalpha_0)
-        interest_points_helper( r_0_mult * r_inner, alpha_0,
-                                interest_radii_candidates,
-                                unsqueezed_bow_shock,
-                                J_norm, earth_pos,
-                                theta_min,
-                                nb_theta, nb_phi, 
-                                dr, dtheta, dphi );
+    {
+        std::thread t[nb_threads];
+
+        for (int i=0; i<nb_threads; i++)
+        {
+            int start_index = (i*nb_theta)/nb_threads;
+            int end_index = ((i+1)*nb_theta)/nb_threads;
+
+            t[i] = std::thread(
+                &interest_points_helper, 
+                r_0_mult * r_inner, alpha_0,
+                std::ref(interest_radii_candidates), std::ref(unsqueezed_bow_shock), 
+                std::ref(J_norm), std::ref(earth_pos),
+                theta_min, 
+                nb_theta, nb_phi, 
+                dr, dtheta, dphi,
+                start_index, end_index
+            );
+        }
+
+        for (int i=0; i<nb_threads; i++) t[i].join();
+    }
 
 
     InterestPoint* interest_points = new InterestPoint[ nb_theta*nb_phi ];

@@ -7,6 +7,8 @@
 #include <numeric>
 #include <fstream>
 
+#include <thread>
+
 #include "matrix.h"
 #include "points.h"
 #include "streamlines.h"
