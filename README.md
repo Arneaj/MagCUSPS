@@ -1,7 +1,5 @@
 # MagCUSPS — Magnetopause Continuous Unsupervised Simulation Profiling & Synthesis
 
-## Map of content
-
 ## Introduction
 
 This library has been created in the context of a Master's Thesis in Computer science at Imperial College London in collaboration with the Space Plasma science research team. 
@@ -51,30 +49,44 @@ Which can then be imported in python with:
 import mag_cusps as cusps
 ```
 
+## Using the python library
 
-## How to use
+Here is a complete example pipeline using the python library
 
-### Reading data
+```
+import numpy as np
+import mag_cusps as cusps
 
-The library provides a ReaderWriter interface in `./headers_cpp/reader_writer.h` explaining how to implement the proper reader for your data. As explained in the header, the indexing of the data should be in Fortran style indexing, i.e.
+# define J, Rho, X, Y, Z, earth_pos from desired simulation
 
-```cpp
-M(ix,iy,iz,ic) = M.mat[ ix + iy*shape.x + iz*shape.x*shape.y + ic*shape.x*shape.y*shape.z ];
+J_processed: np.ndarray = cusps.preprocess( J, X, Y, Z, new_shape )
+Rho_processed: np.ndarray = cusps.preprocess( Rho, X, Y, Z, new_shape )
+J_norm_processed = np.linalg.norm( J_processed, axis=3 )
+
+BS = cusps.get_bowshock( Rho_processed, ... )
+MP = cusps.get_interest_points( J_norm_processed, Rho_processed, ... )
+
+MP_params, MP_cost = cusps.fit_to_analytical( MP, ... )
+
+analytics = cusps.analyse( ... )
+model = cusps.load_pretrained_model( ... )
+quality_score = model.predict(analytics)                ### <- the quality scored associated with the input data
+uncertainty = model.get_sample_uncertainty(analytics)   ### <- the uncertainty associated with that score
 ```
 
-If the indexing of your data is different, a Shape strides object will need to be passed when constructing the matrix, which will then be indexed like so:
 
-```cpp
-M(ix,iy,iz,ic) = M.mat[ ix*stride.x + iy*strides.y + iz*strides.z + ic*strides.i ];
-```
 
-### Preprocessing data
+## Master's Thesis
 
-The library provides functions to extrapolate data from different grid types. 
-It can modify the shape of the grid to increase of decrease resolution through interpolation, but also create a uniform grid from non-uniform data if provided with the X, Y and Z matrices describing the value that corresponds to each cell. 
+### Abstract
 
-### Extracting features
+The magnetosphere and its surrounding structures are critical in understanding space-weather dynamics. Many space plasma labs, including Imperial College London space plasma team, have created numerical simulations to forecast its evolution through time. This thesis presents a comprehensive framework that extracts the critical information from these numerical simulations in real time, to be able to preserve their important features through time, without the immense memory complexity normally associated with storing this data.
+A topological analysis approach is developed that extracts magnetopause and bow-shock positions by identifying maxima in current density magnitude and minima in density gradient magnitude using a probabilistic search algorithm. This method, an improvement of the one introduced in Nemecek et al. 2011, reduces computational complexity by several orders of magnitude compared to storing full 3D simulation grids, compressing data from hundreds of megabytes to kilobytes per time-step while maintaining spatial accuracy. The results can be extracted as point grids or analytical function approximations. Significant improvements are provided in this area, presenting a new improved version based on the function described in Liu et al. 2012, including eccentricity to better emulate the possible shapes of the magnetopause, but also improving the cusps to now satisfy both C0 and C1 continuity.
+From these results, the library provides means of evaluating in real time the quality of the numerical simulation data, and determine its breaking points. This is done using Random Forest regression, introduced in AAAAAAA, achieving R2 scores up to AAAAAA depending on the analytical model, successfully identifying erroneous data with recall rates up to AAAAAA, while limiting false alarms, for real time restarting possibilities for diverging simulations.
 
-The library provides functions to extract features of the simulation:
-- **get_interest_points**: will return a C-style array of `InterestPoint`, containing, for some point on the magnetopause, its angle theta in `InterestPoint::theta`, its angle phi in `InterestPoint::phi`, its radius away from the Earth in `InterestPoint::radius` and finally its *weight*, a number from 0 to 1 in `InterestPoint::weight`, being to the certainty the algorithm gives to that particular point being in the correct place. Do note a weight of 1 doesn't guarantee that the point is indeed 100% correct but simply that the algorithm did not find an alternative.
-- **get_bowshock**: will return a `std::vector<Point>` 
+
+### Citation
+
+To cite this work, please use ...
+
+...
