@@ -1,0 +1,63 @@
+Best Shue97 model:
+	Number of trees=15
+	Max depth=10
+	Min sample split=6
+	Min sample leaf=2
+	Seed=48
+R^2=0.8339997133745041
+RMSE=0.1686556887530856
+Uncertainty=0.10600070401951518
+Area Under ROC Curve: 0.867
+Specificity: 0.933
+Sensitivity/Recall (fault detection rate): 0.800
+Precision: 0.800
+F1: 0.800
+Missed faults: 2
+False alarms: 2
+Average uncertainty on faults: 0.059
+
+Best Liu12 model:
+	Number of trees=15
+	Max depth=2
+	Min sample split=6
+	Min sample leaf=1
+	Seed=37
+R^2=0.8057012026053394
+RMSE=0.19748248500256826
+Uncertainty=0.08480460974971094
+Area Under ROC Curve: 0.867
+Specificity: 0.933
+Sensitivity/Recall (fault detection rate): 0.800
+Precision: 0.800
+F1: 0.800
+Missed faults: 2
+False alarms: 2
+Average uncertainty on faults: 0.066
+
+Best Rolland25 model:
+	Number of trees=15
+	Max depth=6
+	Min sample split=6
+	Min sample leaf=2
+	Seed=34
+R^2=0.8437834789241458
+RMSE=0.190691193907197
+Uncertainty=0.09194209102232187
+Area Under ROC Curve: 0.867
+Specificity: 0.933
+Sensitivity/Recall (fault detection rate): 0.800
+Precision: 0.800
+F1: 0.800
+Missed faults: 2
+False alarms: 2
+Average uncertainty on faults: 0.109
+
+
+====================================
+CPU Time used: 07:56:56
+CPU Percent: 99%
+Memory usage: 168800kb
+Approx Power usage: 0.0952
+Walltime usage: 08:01:50
+
+====================================

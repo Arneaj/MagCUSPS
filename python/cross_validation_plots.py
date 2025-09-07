@@ -8,9 +8,8 @@ from sklearn.model_selection import KFold
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, r2_score
 import pandas as pd
-from mag_cusps import MagCUSPS_RandomForestModel, load_pretrained_model
+from mag_cusps import load_pretrained_model
 
-import joblib
 
 def get_rf_uncertainty(model, X_sample):
     """
@@ -108,32 +107,49 @@ for i, m in enumerate(models):
     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
     fold_uncertainty = model.get_batch_uncertainty(X_test)
     
-    fault_threshold = 0.3  
+    fault_threshold = 0.5
     
     actual_faults = y_test < fault_threshold
     predicted_faults = y_pred < fault_threshold
     
     # Key metrics for fault detection
     true_positives = np.sum(actual_faults & predicted_faults)
+    true_negatives = np.sum(~actual_faults & ~predicted_faults) 
     false_negatives = np.sum(actual_faults & ~predicted_faults) 
     false_positives = np.sum(~actual_faults & predicted_faults) 
     
-    recall = true_positives / max(np.sum(actual_faults), 1)
-    precision = true_positives / max(np.sum(predicted_faults), 1)
-    f1 = 2 * (precision*recall)/(precision+recall)
+    final_specificity = true_negatives / max(np.sum(~actual_faults), 1)
+    final_recall = true_positives / max(np.sum(actual_faults), 1)
+    final_precision = true_positives / max(np.sum(predicted_faults), 1)
+    final_f1 = 2 * (final_precision*final_recall)/ max(final_precision+final_recall, 1)
     
-    print(f"{m}: R2 = ", r2)
-    print(f"{m}: RMSE = ", rmse)
-    print(f"{m}: uncertainty = ", fold_uncertainty)
-    print(f"{m}: recall = ", recall)
-    print(f"{m}: precision = ", precision)
-    print(f"{m}: F1 = ", f1)
+    uncertainties = [model.get_sample_uncertainty(x) for x in X_test]
+    
+    final_r2 = r2_score(y_test, y_pred)
+    final_rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+    final_uncertainty = model.get_batch_uncertainty(X_test)
+    
+    from sklearn.metrics import roc_auc_score
+    final_auc_score = roc_auc_score(actual_faults, predicted_faults)
+    
+    print(f"R^2={final_r2}\nRMSE={final_rmse}\nUncertainty={final_uncertainty}")
+    print(f"Area Under ROC Curve: {final_auc_score:.3f}")
+    print(f"Specificity: {final_specificity:.3f}")
+    print(f"Sensitivity/Recall (fault detection rate): {final_recall:.3f}")
+    print(f"Precision: {final_precision:.3f}")
+    print(f"F1: {final_f1:.3f}")
+    print(f"Missed faults: {false_negatives}")
+    print(f"False alarms: {false_positives}")
+    print(f"Average uncertainty on faults: {np.mean([unc for i, unc in enumerate(uncertainties) if actual_faults[i]]):.3f}")    
+    
+    print()
        
     # mag_cusps_model = MagCUSPS_RandomForestModel()
     # mag_cusps_model.define(final_model, scaler)
         
     # mag_cusps_model.dump(f"../.result_folder/evaluation_prediction_model_{m}.pkl")
         
-    
+fig.suptitle(f"Actual vs Predicted per model")
     
 plt.savefig("../images/cv_plots.svg")
+

@@ -161,26 +161,26 @@ print(f"Finished in {t1-t0:.4f}s -> Fit Rolland25 function to the Magnetopause")
 print( MP_params )
 
 
-# t0 = time.time()
-# params = np.concatenate([ np.array([MP_params[0]/extra_precision]), MP_params[1:4], np.array([MP_params[4]/extra_precision]), MP_params[5:7], np.array([MP_params[7]/extra_precision]), MP_params[8:] ])
-# analytics = cusps.analyse(
-#     J_norm = J_norm_processed, 
-#     earth_pos = earth_pos,
-#     nb_theta = 40, nb_phi = 90,
-#     interest_points = MP, 
-#     params = params, fit_loss = MP_cost,
-#     analytical_function = "Rolland25",
-#     threshold = extra_precision * 2.0
-# )
+t0 = time.time()
+params = np.concatenate([ np.array([MP_params[0]/extra_precision]), MP_params[1:4], np.array([MP_params[4]/extra_precision]), MP_params[5:7], np.array([MP_params[7]/extra_precision]), MP_params[8:] ])
+analytics = cusps.analyse(
+    J_norm = J_norm_processed, 
+    earth_pos = earth_pos,
+    nb_theta = 40, nb_phi = 90,
+    interest_points = MP, 
+    params = params, fit_loss = MP_cost,
+    analytical_function = "Rolland25",
+    threshold = extra_precision * 2.0
+)
 
-# model = cusps.load_pretrained_model("Rolland25")
-# quality_score = model.predict(analytics)
-# uncertainty = model.get_sample_uncertainty(analytics)
-# t1 = time.time()
-# print(f"Finished in {t1-t0:.4f}s -> Analysis done:")
-# print("analytics =", analytics)
-# print("quality score =", quality_score)
-# print("uncertainty =", uncertainty)
+model = cusps.load_pretrained_model("Rolland25")
+quality_score = model.predict(analytics)
+uncertainty = model.get_sample_uncertainty(analytics)
+t1 = time.time()
+print(f"Finished in {t1-t0:.4f}s -> Analysis done:")
+print("analytics =", analytics)
+print("quality score =", quality_score)
+print("uncertainty =", uncertainty)
 
 
 
