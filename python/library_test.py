@@ -145,7 +145,7 @@ print(f"Finished in {t1-t0:.4f}s -> Found entire Magnetopause")
 
 
 t0 = time.time()
-MP_res = cusps.fit_to_analytical( 
+MP_params, MP_cost = cusps.fit_to_analytical( 
     MP,                            # r_0                        a_0     a_1     a_2     d_n                     l_n     s_n     d_s                     l_s     s_s     e         
     initial_params      = np.array([ extra_precision * 10.0,    0.5,    0,      0,      extra_precision * 3,    0.55,   5,      extra_precision * 3,    0.55,   5,      0 ]),
     lowerbound          = np.array([ extra_precision * 5.0,     0.2,    -1.0,   -1.0,   extra_precision * 0,    0.1,    0.1,    extra_precision * 0,    0.1,    0.1,    -0.8 ]),
@@ -153,9 +153,6 @@ MP_res = cusps.fit_to_analytical(
     radii_of_variation  = np.array([ extra_precision * 3.0,     0.2,    0.5,    0.5,    extra_precision * 2,    0.1,    3,      extra_precision * 2,    0.1,    3,      0.5 ]),
     analytical_function = "Rolland25"
 )
-if MP_res is None:
-    raise Exception()
-MP_params, MP_cost = MP_res
 t1 = time.time()
 print(f"Finished in {t1-t0:.4f}s -> Fit Rolland25 function to the Magnetopause")
 print( MP_params )
