@@ -9,7 +9,7 @@ build-backend = "scikit_build_core.build"
 [project]
 name = "mag_cusps"
 authors = [ { name = "Arnaud Rolland", email = "arnaud.rollandmail@gmail.com" } ]
-version = "0.1.3"
+version = "0.1.4"
 description = "High-performance Python module with C++ backend to analyse numerical simulation outputs of planetary magnetosphere"
 readme = "README.md"
 keywords = ["magnetosphere", "magnetopause", "bow shock", "Gorgon"]
