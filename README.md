@@ -53,7 +53,7 @@ import mag_cusps as cusps
 
 Here is a complete example pipeline using the python library
 
-```
+```python
 import numpy as np
 import mag_cusps as cusps
 
@@ -82,7 +82,8 @@ uncertainty = model.get_sample_uncertainty(analytics)   ### <- the uncertainty a
 
 The magnetosphere and its surrounding structures are critical in understanding space-weather dynamics. Many space plasma labs, including Imperial College London space plasma team, have created numerical simulations to forecast its evolution through time. This thesis presents a comprehensive framework that extracts the critical information from these numerical simulations in real time, to be able to preserve their important features through time, without the immense memory complexity normally associated with storing this data.
 A topological analysis approach is developed that extracts magnetopause and bow-shock positions by identifying maxima in current density magnitude and minima in density gradient magnitude using a probabilistic search algorithm. This method, an improvement of the one introduced in Nemecek et al. 2011, reduces computational complexity by several orders of magnitude compared to storing full 3D simulation grids, compressing data from hundreds of megabytes to kilobytes per time-step while maintaining spatial accuracy. The results can be extracted as point grids or analytical function approximations. Significant improvements are provided in this area, presenting a new improved version based on the function described in Liu et al. 2012, including eccentricity to better emulate the possible shapes of the magnetopause, but also improving the cusps to now satisfy both C0 and C1 continuity.
-From these results, the library provides means of evaluating in real time the quality of the numerical simulation data, and determine its breaking points. This is done using Random Forest regression, introduced in AAAAAAA, achieving R2 scores up to AAAAAA depending on the analytical model, successfully identifying erroneous data with recall rates up to AAAAAA, while limiting false alarms, for real time restarting possibilities for diverging simulations.
+From these results, the library provides means of evaluating in real time the quality of the numerical simulation data, and determine its breaking points. This is done using Random Forest regression, achieving R2 scores up to 0.803 depending on the analytical model, successfully identifying erroneous data with recall rates up to 0.812, while minimizing false alarms, for real
+time unsupervised restarting of diverging simulations.
 
 
 ### Citation
